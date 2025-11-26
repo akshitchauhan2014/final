@@ -23,6 +23,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import { FallingSparkles, FloatingBubbles, FallingHearts, ConfettiRain, TwinklingStars } from '../components/Decoration';
+import { generateCompositeFromPhotos } from '../utils/imageComposite';
 
 function CameraSettings({ updateSession, sessionData }) {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ function CameraSettings({ updateSession, sessionData }) {
   const [capturedPhotos, setCapturedPhotos] = useState([]); // Array of captured photo data URLs
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0); // Current photo index for grid layouts
   const [hoveredPhotoIndex, setHoveredPhotoIndex] = useState(null); // Track hovered photo for delete button
+  const [isSavingComposite, setIsSavingComposite] = useState(false);
   const webcamRef = useRef(null); // Reference to webcam component
   const canvasRef = useRef(null); // Reference to canvas for face detection
 
@@ -87,6 +89,24 @@ function CameraSettings({ updateSession, sessionData }) {
 
   const totalCells = getGridCellCount();
   const isComplete = capturedPhotos.length === totalCells;
+
+  const buildCompositeAndContinue = async (photos) => {
+    const gridData = sessionData?.selectedGrid || { id: '4x6-single', cols: 1, rows: 1 };
+    setIsSavingComposite(true);
+    try {
+      const compositeImage = await generateCompositeFromPhotos(photos, gridData);
+      updateSession({
+        capturedPhotos: photos,
+        editedPhotos: photos,
+        compositeImage,
+        selectedGrid: gridData,
+      });
+      navigate('/frame-selection');
+    } catch (error) {
+      console.error('Failed to generate composite from captured photos:', error);
+      setIsSavingComposite(false);
+    }
+  };
 
   // Debug: log grid info when component mounts or grid changes
   useEffect(() => {
@@ -219,11 +239,7 @@ function CameraSettings({ updateSession, sessionData }) {
 
         // If all photos captured, save and proceed
         if (newPhotos.length === totalCells) {
-          updateSession({ capturedPhotos: newPhotos });
-          // Small delay to show completion, then navigate
-          setTimeout(() => {
-            navigate('/edit');
-          }, 500);
+          buildCompositeAndContinue(newPhotos);
         }
       };
     } catch (err) {
@@ -357,11 +373,15 @@ function CameraSettings({ updateSession, sessionData }) {
             )}
             <button
               onClick={handleCapture}
-              disabled={isComplete}
-              className={`px-4 py-2 rounded-lg font-bold text-white text-sm ${isComplete ? 'bg-gray-400 cursor-not-allowed' : 'bg-rose-500 hover:bg-rose-600 shadow-lg'}`}
+              disabled={isComplete || isSavingComposite}
+              className={`px-4 py-2 rounded-lg font-bold text-white text-sm ${(isComplete || isSavingComposite) ? 'bg-gray-400 cursor-not-allowed' : 'bg-rose-500 hover:bg-rose-600 shadow-lg'}`}
               style={{ fontFamily: "'Poppins', sans-serif" }}
             >
-              {isComplete ? 'Complete ✓' : `📸 Capture Photo ${capturedPhotos.length + 1}/${totalCells}`}
+              {isSavingComposite
+                ? 'Preparing photos…'
+                : isComplete
+                  ? 'Complete ✓'
+                  : `📸 Capture Photo ${capturedPhotos.length + 1}/${totalCells}`}
             </button>
           </div>
         </div>

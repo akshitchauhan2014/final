@@ -406,3 +406,76 @@ export async function createGridComposite(photos, grid, dpi = 300, marginPercent
     throw error;
   }
 }
+
+const GRID_PRESETS = {
+  '4x6-single': { id: '4x6-single', cols: 1, rows: 1 },
+  '4x6-2cut': { id: '4x6-2cut', cols: 1, rows: 2 },
+  '4x6-4cut': { id: '4x6-4cut', cols: 2, rows: 2 },
+  '4x6-6cut': { id: '4x6-6cut', cols: 2, rows: 3 },
+  'strip-grid': { id: 'strip-grid', cols: 1, rows: 4, isStripGrid: true },
+  '2x4-vertical-2': { id: '2x4-vertical-2', cols: 1, rows: 2 },
+  '5x7-6cut': { id: '5x7-6cut', cols: 2, rows: 3 },
+};
+
+const DEFAULT_GRID = GRID_PRESETS['4x6-single'];
+
+const normalizeGrid = (grid) => {
+  if (!grid) {
+    return { ...DEFAULT_GRID };
+  }
+
+  if (typeof grid === 'string') {
+    return GRID_PRESETS[grid] ? { ...GRID_PRESETS[grid] } : { ...DEFAULT_GRID, id: grid };
+  }
+
+  if (!grid.cols || !grid.rows) {
+    const preset = grid.id && GRID_PRESETS[grid.id];
+    if (preset) {
+      return { ...preset, ...grid };
+    }
+    return {
+      ...DEFAULT_GRID,
+      ...grid,
+      cols: grid.cols || DEFAULT_GRID.cols,
+      rows: grid.rows || DEFAULT_GRID.rows,
+    };
+  }
+
+  return { ...grid };
+};
+
+/**
+ * Generates a composite image (or returns the single photo) directly from captured photos.
+ * Used when skipping the legacy edit screen so the next steps still receive a composite.
+ *
+ * @param {string[]} photos - Captured photo data URLs.
+ * @param {Object|string} grid - Selected grid data or ID.
+ * @param {Object} options - Optional config { dpi?: number, marginPercent?: number }.
+ * @returns {Promise<string>} - Composite image data URL (or single photo if only one).
+ */
+export async function generateCompositeFromPhotos(photos, grid, options = {}) {
+  if (!photos || photos.length === 0) {
+    throw new Error('No photos provided for composite generation');
+  }
+
+  const normalizedGrid = normalizeGrid(grid);
+  const { dpi = 300, marginPercent = 3 } = options;
+  const isStripGrid = normalizedGrid.id === 'strip-grid' || normalizedGrid.isStripGrid;
+  const totalCells = isStripGrid ? 4 : (normalizedGrid.cols * normalizedGrid.rows || 1);
+
+  if (photos.length === 1) {
+    return photos[0];
+  }
+
+  if (!isStripGrid && photos.length !== totalCells) {
+    console.warn(`Expected ${totalCells} photos for grid ${normalizedGrid.id}, got ${photos.length}. Falling back to first photo.`);
+    return photos[0];
+  }
+
+  try {
+    return await createGridComposite(photos, normalizedGrid, dpi, marginPercent);
+  } catch (error) {
+    console.error('Failed to generate composite from photos:', error);
+    return photos[0];
+  }
+}

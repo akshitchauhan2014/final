@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import { FallingSparkles, FloatingBubbles, FallingHearts, ConfettiRain, TwinklingStars } from '../components/Decoration';
+import { generateCompositeFromPhotos } from '../utils/imageComposite';
 
 function CameraScreen({ sessionData, updateSession }) {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ function CameraScreen({ sessionData, updateSession }) {
   const [currentCell, setCurrentCell] = useState(0);
   const [selectedFrame, setSelectedFrame] = useState('none');
   const [applyingFilter, setApplyingFilter] = useState(false);
+  const [isProcessingNext, setIsProcessingNext] = useState(false);
 
   const filterStyles = {
     none: 'none',
@@ -159,17 +161,29 @@ function CameraScreen({ sessionData, updateSession }) {
     setCountdown(null);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (isProcessingNext) return;
+
     const grid = sessionData.selectedGrid || { cols: 1, rows: 1 };
     // Strip-grid needs 4 photos (1 column × 4 rows, will be duplicated in composite)
     const isStripGrid = grid.id === 'strip-grid' || grid.isStripGrid;
     const totalCells = isStripGrid ? 4 : (grid.cols * grid.rows);
     if (capturedImages.length === totalCells) {
-      updateSession({
-        capturedPhotos: capturedImages,
-        selectedFrame: selectedFrame
-      });
-      navigate('/edit');
+      setIsProcessingNext(true);
+      try {
+        const compositeImage = await generateCompositeFromPhotos(capturedImages, grid);
+        updateSession({
+          capturedPhotos: capturedImages,
+          editedPhotos: capturedImages,
+          compositeImage,
+          selectedGrid: grid,
+          selectedFrame,
+        });
+        navigate('/frame-selection');
+      } catch (error) {
+        console.error('Failed to prepare composite from captured photos:', error);
+        setIsProcessingNext(false);
+      }
     }
   };
 
@@ -298,9 +312,10 @@ function CameraScreen({ sessionData, updateSession }) {
                         </button>
                         <button
                           onClick={handleNext}
-                          className="btn-primary text-sm"
+                          className="btn-primary text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                          disabled={isProcessingNext}
                         >
-                          Next: Edit →
+                          {isProcessingNext ? 'Preparing…' : 'Next: Frames →'}
                         </button>
                       </>
                     );

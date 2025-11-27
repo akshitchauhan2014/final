@@ -102,7 +102,7 @@ function GridSelection({ updateSession }) {
 
 
         style={{
-          height: "90%",
+          height: "100%",
           background: "#f7f4E8", // Cream white background
           border: "5px solid #FF6B6A", // Coral-pink border
           padding: 0,
@@ -117,25 +117,25 @@ function GridSelection({ updateSession }) {
         </h2>
 
         {/* Grid options: 2 columns layout for 4 options (2 rows: 2-2) */}
-        <div className="grid grid-cols-4 gap-4 flex-1 overflow-y-auto overflow-x-hidden m-6"
+        <div className="grid grid-cols-4 gap-4 flex-2 p-6  overflow-x-hidden m-2"
           style={{
-            height: 'calc(100% - 50px)', // Adjust height to fit within the container
+            height: 'calc(70% - 50px)', // Adjust height to fit within the container
           }}>
           {grids.map((grid) => (
             <button
               key={grid.id}
               onClick={() => setSelected(grid.id)}
-              className={`relative rounded-2xl border-4 p-4 transition-all flex flex-col items-center ${selected === grid.id
+              className={`relative rounded-2xl border-4 p-2 transition-all flex flex-col items-center ${selected === grid.id
                 ? 'border-rose-400 bg-rose-50 shadow-lg scale-105'
                 : 'border-gray-200 hover:border-rose-300 hover:bg-rose-50/50'
                 }`}
               style={{
                 background: selected === grid.id ? '#FFF0F5' : '#FFF7EE',
-                height: '100%', // Ensure buttons fit the height of the grid container
+                height: '70%', // Ensure buttons fit the height of the grid container
               }}
             >
               {/* Visual grid preview: Shows layout structure */}
-              <div className="w-full flex-1 flex items-center justify-center mb-3" style={{ minHeight: 0, maxHeight: '100%', overflow: 'hidden' }}>
+              <div className="w-full flex-1 flex items-center justify-center mb-1" style={{ minHeight: 0, maxHeight: '100%', overflow: 'hidden' }}>
                 {renderGridPreview(grid)}
               </div>
 

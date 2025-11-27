@@ -117,7 +117,7 @@ function GridSelection({ updateSession }) {
         </h2>
 
         {/* Grid options: 2 columns layout for 4 options (2 rows: 2-2) */}
-        <div className="grid grid-cols-2 gap-4 flex-1 overflow-y-auto overflow-x-hidden m-3"
+        <div className="grid grid-cols-4 gap-4 flex-1 overflow-y-auto overflow-x-hidden m-6"
           style={{
             height: 'calc(100% - 50px)', // Adjust height to fit within the container
           }}>

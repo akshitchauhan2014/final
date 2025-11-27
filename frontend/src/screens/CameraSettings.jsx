@@ -53,14 +53,14 @@ function CameraSettings({ updateSession, sessionData }) {
     const grid = sessionData?.selectedGrid;
     // Handle both old format (string) and new format (object)
     if (!grid) return 1;
-    
+
     // Strip-grid needs 4 photos (1 column × 4 rows, will be duplicated in composite)
     if (typeof grid === 'string') {
       if (grid === 'strip-grid') return 4;
     } else if (grid.id === 'strip-grid' || grid.isStripGrid) {
       return 4;
     }
-    
+
     if (typeof grid === 'string') {
       // Old format: string ID
       if (grid === '4x6-single') return 1;
@@ -291,7 +291,7 @@ function CameraSettings({ updateSession, sessionData }) {
             {capturedPhotos.length > 0 && (
               <div className="mt-2">
                 <h4 className="font-semibold text-sm mb-1" style={{ fontFamily: "'Poppins', sans-serif" }}>Captured ({capturedPhotos.length}/{totalCells})</h4>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {capturedPhotos.map((photo, idx) => (
                     <div
                       key={idx}
